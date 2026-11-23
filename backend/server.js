@@ -27,19 +27,20 @@ app.get('/api/health', (req, res) => {
 // Mount Routes
 app.use('/api/employees', employeeRoutes);
 
-// In Production: Serve frontend static build files
-if (process.env.NODE_ENV === 'production') {
-  const frontendDist = path.join(__dirname, '../frontend/dist');
-  app.use(express.static(frontendDist));
+// Serve frontend static build files (SPA support for Express v5)
+const frontendDist = path.join(__dirname, '../frontend/dist');
+app.use(express.static(frontendDist));
 
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(frontendDist, 'index.html'));
-  });
-} else {
-  // Error Handling Middlewares in Dev
-  app.use(notFound);
-}
+app.use((req, res, next) => {
+  // If the request is for an unmatched API route, proceed to 404 handler
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.resolve(frontendDist, 'index.html'));
+});
 
+// Error Handling Middlewares
+app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
